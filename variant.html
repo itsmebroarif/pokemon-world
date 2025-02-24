@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Pokémon Variants</title>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+      integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
+    <style>
+      body {
+        background-color: #1a3c70;
+        color: #000000;
+        zoom: 80%;
+      }
+
+      .container {
+        max-width: 500px;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+      }
+
+      th {
+        text-align: center;
+      }
+
+      td {
+        text-align: center;
+      }
+
+      .name {
+        font-weight: bold;
+      }
+
+      .image {
+        width: 100px;
+      }
+
+      .type {
+        font-size: 0.8em;
+      }
+
+      .type-icon {
+        width: 20px;
+        height: 20px;
+        margin-right: 5px;
+      }
+
+      .detail {
+        display: none;
+      }
+
+      .detail.show {
+        display: block;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1 class="text-center">Pokémon Variants</h1>
+      <center>
+        <hr width="150" />
+      </center>
+      <input
+        type="text"
+        id="search"
+        class="form-control"
+        placeholder="Search Pokémon"
+      />
+      <table class="table mt-3">
+        <thead>
+          <tr>
+            <th>Nama</th>
+            <th>Gambar</th>
+            <th>Tipe</th>
+            <th>Detail</th>
+          </tr>
+        </thead>
+        <tbody id="pokemon-list"></tbody>
+      </table>
+    </div>
+    <script>
+      AOS.init();
+      const pokemonList = document.getElementById("pokemon-list");
+      const searchInput = document.getElementById("search");
+      const url = "https://pokeapi.co/api/v2/pokemon/?limit=151";
+      let allPokemonData = [];
+
+      fetch(url)
+        .then((response) => response.json())
+        .then((data) => {
+          const promises = data.results.map((pokemon) =>
+            fetch(pokemon.url).then((response) => response.json())
+          );
+          return Promise.all(promises);
+        })
+        .then((pokemonDataArray) => {
+          allPokemonData = pokemonDataArray;
+          displayPokemons(allPokemonData);
+        });
+
+      searchInput.addEventListener("input", () => {
+        const searchQuery = searchInput.value.toLowerCase();
+        const filteredData = allPokemonData.filter((pokemon) =>
+          pokemon.name.toLowerCase().includes(searchQuery)
+        );
+        displayPokemons(filteredData);
+      });
+
+      function displayPokemons(pokemonDataArray) {
+        pokemonList.innerHTML = "";
+        pokemonDataArray.forEach((pokemonData) => {
+          const row = document.createElement("tr");
+          const nameCell = document.createElement("td");
+          const imageCell = document.createElement("td");
+          const typeCell = document.createElement("td");
+          const detailCell = document.createElement("td");
+          const detailButton = document.createElement("button");
+          const detailText = document.createElement("div");
+          detailText.classList.add("detail");
+          detailButton.classList.add("btn", "btn-primary", "btn-sm");
+          detailButton.textContent = "Lihat Detail";
+          detailButton.onclick = () => {
+            if (detailText.classList.contains("show")) {
+              detailText.classList.remove("show");
+            } else {
+              detailText.classList.add("show");
+            }
+          };
+          nameCell.textContent = pokemonData.name;
+          nameCell.classList.add("name");
+          imageCell.innerHTML = `<img src="${pokemonData.sprites.front_default}" class="image" />`;
+          typeCell.innerHTML = pokemonData.types
+            .map((type) => {
+              return `<img src="https://veekun.com/dex/media/types/en/${type.type.name}.png" class="type-icon" />${type.type.name}`;
+            })
+            .join("<br>");
+          typeCell.classList.add("type");
+          detailText.innerHTML = `
+          <p>Height: ${pokemonData.height}</p>
+          <p>Weight: ${pokemonData.weight}</p>
+          <p>Base Experience: ${pokemonData.base_experience}</p>
+          <p>Abilities: ${pokemonData.abilities
+            .map((ability) => ability.ability.name)
+            .join(", ")}</p>
+        `;
+          detailCell.appendChild(detailButton);
+          detailCell.appendChild(detailText);
+          row.appendChild(nameCell);
+          row.appendChild(imageCell);
+          row.appendChild(typeCell);
+          row.appendChild(detailCell);
+          pokemonList.appendChild(row);
+        });
+      }
+    </script>
+  </body>
+</html>
